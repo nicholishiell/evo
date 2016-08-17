@@ -1,0 +1,71 @@
+#ifndef CONTROLLER
+#define CONTROLLER
+
+#include <stdio.h>
+#include <string>
+
+
+using namespace std;
+
+class Controller{
+public:
+  Controller(string s, float f, float d, float sx, float sy, float nc){
+    
+    chromo = s;
+    fitness = f;
+    dist = d;
+    stdX = sx;
+    stdY = sy;
+    nCollide = nc;
+  }
+
+  Controller(Controller* c){
+    chromo = c->GetChromo();
+    fitness = c->GetFitness();
+    dist = c->GetDist();
+    stdX = c->GetStdX();
+    stdY = c->GetStdY();
+    nCollide = c->GetNCollide();
+  }
+
+  ~Controller(){};
+
+  string GetChromo(){return chromo;}
+  int GetChromoLength(){return chromo.size();}
+
+  float GetFitness(){return fitness;}
+  float GetDist(){return dist;}
+  float GetStdX(){return stdX;}
+  float GetStdY(){return stdY;}
+  float GetNCollide(){return nCollide;}
+
+  float GetDistRank(){return distRank;}
+  float GetStdXRank(){return stdXRank;}
+  float GetStdYRank(){return stdYRank;}
+  float GetNCollideRank(){return nCollideRank;}
+
+  void SetFitness(float f){fitness = f;}
+  void SetDistRank(float d){distRank = d;}
+  void SetStdXRank(float s){stdXRank = s;}
+  void SetStdYRank(float s){stdYRank = s;}  
+  void SetNCollideRank(float n){nCollideRank = n;}
+
+  void Print(){  
+    printf("%s\t%f\t%f\t%f\t%f\t%f\n", chromo.c_str(), fitness, dist, stdX, stdY, nCollide);
+  }
+
+private:
+  string chromo;
+  float fitness;
+  float dist;
+  float stdX;
+  float stdY;
+  float nCollide;
+  
+  float distRank;
+  float stdXRank;
+  float stdYRank;
+  float nCollideRank;
+};
+
+#endif

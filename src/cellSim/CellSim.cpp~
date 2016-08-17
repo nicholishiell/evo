@@ -1,0 +1,162 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <math.h>
+#include <vector>
+#include <fstream>
+#include <sstream>
+#include <string>
+
+#include "Referee.h"
+#include "Robot.h"
+
+using namespace std;
+
+int nRobots = 8;
+int maxTimeSteps = 10000;
+int runID = 0;
+int range = 25;
+
+int maxX = 50;
+int maxY = 50;
+int runHeadless = 0;
+
+string chromo;
+
+int currentTimeStep = 0;
+
+
+vector<Robot *> InitializeRobots();
+float GetRandom();
+bool CollisiionDetected(vector<Robot *> robotVector);
+void SaveData(Referee * ref);
+
+int main(int argc, char* argv[]){
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  
+  /* using nano-seconds instead of seconds */
+  srand((time_t)ts.tv_nsec);
+  // Random number initialization
+  //srand (time(NULL));
+
+  nRobots = atoi(argv[1]);
+  maxTimeSteps = atoi(argv[2]);
+  runID = atoi(argv[3]);
+  runHeadless = atoi(argv[4]);
+
+  vector<Robot *> robotVector = InitializeRobots();
+
+  Referee * ref = new Referee(robotVector, maxX, maxY);
+
+  currentTimeStep = 0;
+
+  bool keepGoing = true;
+
+  while(currentTimeStep < maxTimeSteps and keepGoing){
+
+    ref->Step();
+    
+
+    float dist, stdX, stdY;
+    ref->GetStats(dist, stdX, stdY);
+
+    if(stdX == 0) keepGoing = false;
+
+    
+    currentTimeStep++;
+    if(!runHeadless){
+      ref->Display();
+      printf("%d\t%f\t%f\t%f\n", currentTimeStep,dist,stdX,stdY);
+      getchar();
+    }
+  }
+  SaveData(ref);
+  return 0;
+}
+
+//=================================================================================
+
+float GetRandom(){
+    return (float)rand()/(float)RAND_MAX;
+}
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+void SaveData(Referee * ref){
+
+  ofstream myfile;
+
+  float dist, stdX, stdY;
+
+  ref->GetStats(dist, stdX, stdY);
+
+  std::stringstream outputFileName;
+  outputFileName << "./results/outputData" << runID;
+  myfile.open(outputFileName.str().c_str(), std::fstream::app);
+  myfile << chromo <<"\t" << 1./stdX << "\t" << dist
+	 <<"\t"<< stdX <<"\t"<< stdY <<"\t"<<0.<<"\n"; 
+  myfile.close();
+
+};
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+bool CollisiionDetected(vector<Robot *> robotVector){
+
+  Robot * r1 = robotVector.back();
+
+  for(unsigned int j =0; j < robotVector.size()-1; j++){
+    Robot * r2 = robotVector[j];
+           
+    if(r2->GetX() == r1->GetX() and r2->GetY() == r1->GetY() ){
+      return true;
+    }
+
+  } 
+
+  return false;
+}
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+vector<Robot *> InitializeRobots(){
+
+  vector<Robot *> robotVector;
+
+  // First open the input file to get the controller being tested
+  ifstream inputFile;
+  std::stringstream inputFileName;
+  inputFileName << "./untested/individual"<< runID <<".dat";
+  inputFile.open(inputFileName.str().c_str(), std::fstream::in);
+ 
+  inputFile >> chromo;
+  inputFile.close();
+
+  for(int i = 0; i < nRobots; i++){
+    
+    int posX = maxX/2 + (int)(10.*GetRandom() - 5.);
+    int posY = maxY/2 + (int)(10.*GetRandom() - 5.);
+  
+
+    // Create robot
+    Robot* aRobot = new Robot (posX, posY, chromo, range);
+    
+    // Add the robot to the robot vector
+    robotVector.push_back(aRobot);
+    
+    // After adding the last robot check to see if it is on top of another robot
+    // if so reposition it!
+    while(CollisiionDetected(robotVector)){
+      posX = maxX/2 + (int)(10.*GetRandom() - 5.);
+      posY = maxY/2 + (int)(10.*GetRandom() - 5.);
+      robotVector.back()->UpdatePosition(posX, posY);
+    }
+  }
+
+  //for(int i = 0; i < nRobots; i++)
+  //  robotVector[i]->Print();
+
+  return robotVector;
+}
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
